@@ -76,6 +76,38 @@ class ObjectPersister implements ObjectPersisterInterface
         $this->type->deleteById($id);
     }
 
+    /**
+     * Deletes the entire type
+     *
+     * @return null
+     **/
+    public function delete()
+    {
+        $this->type->delete();
+    }
+
+    public function setMapping(array $indexConfig)
+    {
+        $types = $indexConfig['config']['mappings'];
+        foreach ($types as $name => $mapping) {
+            if ($name == $this->type->getName()) {
+                $mappingObject = new \Elastica_Type_Mapping();
+                $mappingObject->setProperties($mapping['properties']);
+                if (isset($mapping['_all'])) {
+                    $mappingObject->setParam('_all', $mapping['_all']);
+                }
+                if (isset($mapping['_source'])) {
+                    $mappingObject->setParam('_source', $mapping['_source']);
+                }
+
+                $this->type->setMapping($mappingObject);
+
+                return;
+            }
+        }
+
+        throw new \Exception('Missing type');
+    }
 
     /**
      * Inserts an array of objects in the type

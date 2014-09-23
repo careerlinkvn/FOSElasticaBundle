@@ -182,6 +182,9 @@ class FOSElasticaExtension extends Extension
             if (isset($type['_source'])) {
                 $this->indexConfigs[$indexName]['config']['mappings'][$name]['_source'] = $type['_source'];
             }
+            if (isset($type['_all'])) {
+                $this->indexConfigs[$indexName]['config']['mappings'][$name]['_all'] = $type['_all'];
+            }
             if (isset($type['_boost'])) {
                 $this->indexConfigs[$indexName]['config']['mappings'][$name]['_boost'] = $type['_boost'];
             }

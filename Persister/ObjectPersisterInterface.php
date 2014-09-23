@@ -33,6 +33,16 @@ interface ObjectPersisterInterface
     function deleteOne($object);
 
     /**
+     * Deletes the entire type
+     **/
+    function delete();
+
+    /**
+     * Post the type mapping
+     **/
+    function setMapping(array $indexConfig);
+
+    /**
      * Deletes one object in the type by id
      *
      * @param mixed $id

@@ -19,6 +19,11 @@ class Resetter
         $this->indexConfigsByName = $indexConfigsByName;
     }
 
+    public function getIndexConfigs()
+    {
+        return $this->indexConfigsByName;
+    }
+
     /**
      * Deletes and recreates all indexes
      */
