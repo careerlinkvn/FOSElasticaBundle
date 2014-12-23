@@ -44,6 +44,7 @@ class PopulateCommand extends ContainerAwareCommand
             ->addOption('index', null, InputOption::VALUE_OPTIONAL, 'The index to repopulate')
             ->addOption('type', null, InputOption::VALUE_OPTIONAL, 'The type to repopulate')
             ->addOption('no-reset', null, InputOption::VALUE_NONE, 'Do not reset index before populating')
+            ->addOption('no-populate', null, InputOption::VALUE_NONE, 'Do not populate index')
             ->addOption('offset', null, InputOption::VALUE_REQUIRED, 'Start indexing at offset', 0)
             ->addOption('sleep', null, InputOption::VALUE_REQUIRED, 'Sleep time between persisting iterations (microseconds)', 0)
             ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Index packet size (overrides provider config option)')
@@ -69,6 +70,7 @@ class PopulateCommand extends ContainerAwareCommand
         $index         = $input->getOption('index');
         $type          = $input->getOption('type');
         $reset         = $input->getOption('no-reset') ? false : true;
+        $populate      = $input->getOption('no-populate') ? false : true;
         $noInteraction = $input->getOption('no-interaction');
         $options       = $input->getOptions();
 
@@ -86,15 +88,15 @@ class PopulateCommand extends ContainerAwareCommand
 
         if (null !== $index) {
             if (null !== $type) {
-                $this->populateIndexType($output, $index, $type, $reset, $options);
+                $this->populateIndexType($output, $index, $type, $reset, $populate, $options);
             } else {
-                $this->populateIndex($output, $index, $reset, $options);
+                $this->populateIndex($output, $index, $reset, $populate, $options);
             }
         } else {
             $indexes = array_keys($this->indexManager->getAllIndexes());
 
             foreach ($indexes as $index) {
-                $this->populateIndex($output, $index, $reset, $options);
+                $this->populateIndex($output, $index, $reset, $populate, $options);
             }
         }
     }
@@ -105,24 +107,27 @@ class PopulateCommand extends ContainerAwareCommand
      * @param OutputInterface $output
      * @param string          $index
      * @param boolean         $reset
+     * @param boolean         $populate
      * @param array           $options
      */
-    private function populateIndex(OutputInterface $output, $index, $reset, $options)
+    private function populateIndex(OutputInterface $output, $index, $reset, $populate, $options)
     {
         if ($reset) {
             $output->writeln(sprintf('<info>Resetting</info> <comment>%s</comment>', $index));
             $this->resetter->resetIndex($index);
         }
 
-        /** @var $providers ProviderInterface[] */
-        $providers = $this->providerRegistry->getIndexProviders($index);
+        if ($populate) {
+            /** @var $providers ProviderInterface[] */
+            $providers = $this->providerRegistry->getIndexProviders($index);
 
-        foreach ($providers as $type => $provider) {
-            $loggerClosure = function($message) use ($output, $index, $type) {
-                $output->writeln(sprintf('<info>Populating</info> %s/%s, %s', $index, $type, $message));
-            };
+            foreach ($providers as $type => $provider) {
+                $loggerClosure = function($message) use ($output, $index, $type) {
+                    $output->writeln(sprintf('<info>Populating</info> %s/%s, %s', $index, $type, $message));
+                };
 
-            $provider->populate($loggerClosure, $options);
+                $provider->populate($loggerClosure, $options);
+            }
         }
 
         $output->writeln(sprintf('<info>Refreshing</info> <comment>%s</comment>', $index));
@@ -136,21 +141,24 @@ class PopulateCommand extends ContainerAwareCommand
      * @param string          $index
      * @param string          $type
      * @param boolean         $reset
+     * @param boolean         $populate
      * @param array           $options
      */
-    private function populateIndexType(OutputInterface $output, $index, $type, $reset, $options)
+    private function populateIndexType(OutputInterface $output, $index, $type, $reset, $populate, $options)
     {
         if ($reset) {
             $output->writeln(sprintf('Resetting: %s/%s', $index, $type));
             $this->resetter->resetIndexType($index, $type);
         }
 
-        $loggerClosure = function($message) use ($output, $index, $type) {
-            $output->writeln(sprintf('Populating: %s/%s, %s', $index, $type, $message));
-        };
+        if ($populate) {
+            $loggerClosure = function($message) use ($output, $index, $type) {
+                $output->writeln(sprintf('Populating: %s/%s, %s', $index, $type, $message));
+            };
 
-        $provider = $this->providerRegistry->getProvider($index, $type);
-        $provider->populate($loggerClosure, $options);
+            $provider = $this->providerRegistry->getProvider($index, $type);
+            $provider->populate($loggerClosure, $options);
+        }
 
         $output->writeln(sprintf('Refreshing: %s', $index));
         $this->indexManager->getIndex($index)->refresh();
