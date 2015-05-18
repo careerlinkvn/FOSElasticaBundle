@@ -52,7 +52,11 @@ class ElasticaLogger
 
         if (null !== $this->logger) {
             $message = sprintf("%s (%s) %0.2f ms", $path, $method, $time * 1000);
-            $this->logger->info($message, (array) $data);
+            if ($this->debug) {
+                $this->logger->info($message, (array) $data);
+            } else {
+                $this->logger->info($message);
+            }
         }
     }
 
