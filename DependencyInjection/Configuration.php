@@ -355,6 +355,8 @@ class Configuration implements ConfigurationInterface
             ->scalarNode('index_options')->end()
             ->scalarNode('ignore_above')->end()
             ->scalarNode('position_offset_gap')->end()
+            ->scalarNode('geohash_prefix')->end()
+            ->scalarNode('geohash_precision')->end()
             ->arrayNode('_parent')
                 ->treatNullLike(array())
                 ->children()
